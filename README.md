@@ -1,7 +1,7 @@
 # Survey Solutions Dashboard Application
 
 <div style="text-align: justify">
-> This is an example [R Shiny](https://shiny.rstudio.com/) application on how to use the [Survey Solutions RESTful API](https://demo.mysurvey.solutions//apidocs/index#!), to **automate** and **monitor** the enumeration of structures and dwellings/households, either for census data collection, or ahead of a complex multi stage survey. Through the use of the Survey Solutions Computer Assisted Survey System (CASS) and the included geo-spatial features data collection also includes geo-referenced location data for each of the statistial units.
+This is an example [R Shiny](https://shiny.rstudio.com/) application on how to use the [Survey Solutions RESTful API](https://demo.mysurvey.solutions//apidocs/index#!), to **automate** and **monitor** the enumeration of structures and dwellings/households, either for census data collection, or ahead of a complex multi stage survey. Through the use of the Survey Solutions Computer Assisted Survey System (CASS) and the included geo-spatial features data collection also includes geo-referenced location data for each of the statistial units.
 
 Access to the API is mostly managed by the [SurveySolutionsAPI](https://github.com/michael-cw/SurveySolutionsAPI) R package (currently only available on github).
 

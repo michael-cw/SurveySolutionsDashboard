@@ -3,7 +3,7 @@
 ##    limit: 150000 tiles
 ##    check first with checkTPKsize.R
 
-loadTPK_SF<-function(input.shape=testMap, mapLEVELS="1-19") {
+loadTPK_SF<-function(input.shape=testMap, mapLEVELS="1-19", arc.user = arcuser, arc.pw=arcpw) {
   library(httr)
   library(jsonlite)
   mapShape<-input.shape
@@ -11,8 +11,6 @@ loadTPK_SF<-function(input.shape=testMap, mapLEVELS="1-19") {
   ##    SETTINGS
   ##########################################################################################
   ##  ACCESS
-  arc.user="Michael_wi"
-  arc.pw="nitro1309"
   serviceURL="http://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer"
   portalURL="https://www.arcgis.com/sharing/rest/generateToken"
   domain.ServiceURL="http://tiledbasemaps.arcgis.com/arcgis"

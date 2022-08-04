@@ -1,4 +1,4 @@
-checkTPKsizeSF<-function(input.shape=testMap, mapLEVELS="1-18") {
+checkTPKsizeSF<-function(input.shape=testMap, mapLEVELS="1-18", arc.user = arcuser, arc.pw=arcpw) {
   
   library(httr)
   library(jsonlite)
@@ -7,8 +7,6 @@ checkTPKsizeSF<-function(input.shape=testMap, mapLEVELS="1-18") {
   ##    SETTINGS
   ##########################################################################################
   ##  ACCESS
-  arc.user="Michael_wi"
-  arc.pw="nitro1309"
   serviceURL="http://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer"
   portalURL="https://www.arcgis.com/sharing/rest/generateToken"
   domain.ServiceURL="http://tiledbasemaps.arcgis.com/arcgis"

@@ -20,8 +20,7 @@ library(future); library(foreach); library(doFuture)
 ### 0.2 MAPS Now SF
 ## bing map
 ## api key
-BingApiKey = "Aq9SQmHX5idMv4YRtvUapCvtNmboO4MV78tO6SfYArAoloQ2l4rb_1w8UEaHmHRV"
-map_key<-"AIzaSyDEyBvMzHIW9aG-4Z7Eb6cqtZ_3M9H5KOQ"
+source("./CREDENTIALS.R")
 
 library(sf)
 ## file path to shapes

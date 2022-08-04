@@ -54,6 +54,8 @@ To cover this workflow, the applications offers the following features:
 
 ## Set-up
 
+The **pm4py** package, which is required for the process analsysis applied to the paradata is not available anylonger on CRAN, you therefore need to install it directly from github, via *remotes::install_github("bupaverse/pm4py@dev")*
+
 ## Automation Script
 
 ## Operations

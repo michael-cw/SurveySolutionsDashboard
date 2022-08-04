@@ -1,0 +1,61 @@
+---
+title: "Survey Solutions Questionnaire Manual"
+author: "Survey Solutions"
+date: "4/15/2018"
+output: pdf_document
+    
+params:
+    questionnaireDT: NA
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NULL, warning = F, message = F)
+# source("helpers/source_and_packages.R")
+##  For tables
+library(kableExtra)
+library(knitr)
+library(stargazer)
+#library(plotly)
+library(htmltools)
+library(stringr)
+
+```
+
+```{r plot-dev, include=F, echo=FALSE, eval=TRUE}
+dtQ<-params$questionnaireDT
+# out<-NULL
+# for (line in 1:length(dtQ)) {
+# v<-dtQ[line]
+# 
+# env=new.env()
+# out = c(out, knit_child('plot_child.Rmd', quiet=T))
+# }
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

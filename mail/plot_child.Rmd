@@ -1,0 +1,18 @@
+```{r include=FALSE}
+#library(ggplot2)
+knitr::opts_chunk$set(echo = FALSE, comment = NULL, warning = F, message = F)
+QT<-str_replace_all(v$details$QuestionText, '%', '"')
+
+```
+
+
+<h2 class='qTitle'> `r paste(v$details$VariableName)`</h2>
+
+
+### `r paste("QUESTION:",  QT)`
+<hr>
+```{r, echo=F, comment=NULL}
+v$tab[,TEAMS:=NULL]
+flextable(v$tab)
+```
+<br><br><br>

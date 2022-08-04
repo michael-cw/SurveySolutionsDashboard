@@ -1,0 +1,35 @@
+```{r include=FALSE}
+#library(ggplot2)
+knitr::opts_chunk$set(echo = FALSE, comment = NULL, warning = F, message = F)
+#QT<-str_replace_all(v$details$QuestionText, '%', '"')
+#vv[,c("TEAMS", "TEAM MEMBER"):=NULL]
+```
+
+
+<h2 class='qTitle'> `r paste(unique(v$ResponsibleName))`</h2>
+
+
+<h3 class='qTitle'>`r paste("Summary")`</h3>
+<hr>
+```{r, echo=F, comment=NULL}
+v[,ResponsibleName:=NULL][,InterviewDuration:=NULL][,InterviewId:=NULL][,ResponsibleId:=NULL]
+flextable(v)
+```
+<br><br><br>
+
+
+<h3 class='qTitle'>`r paste("Responses")`</h3>
+<hr>
+```{r include=F, echo=FALSE, eval=TRUE}
+out1<-NULL
+for (i in 1:length(vv)) {
+vvv<-vv[[i]]
+env=new.env()
+out1 = c(out1, knit_child('plot_child_child_team.Rmd', quiet=T))
+}
+
+```
+
+`r paste(out1, collapse = '\n')`
+
+<br><br><br>

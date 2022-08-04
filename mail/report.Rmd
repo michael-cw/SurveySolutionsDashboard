@@ -1,0 +1,72 @@
+---
+title: "Question Report Census Listing"
+author: "Powered by Survey Solutions"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    self_contained: true
+    css: style_qManual.css
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+params:
+    questionnaireDT: NA
+    qTitle: NA
+---
+
+
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NULL, warning = F, message = F)
+# source("helpers/source_and_packages.R")
+##  For tables
+library(kableExtra)
+library(knitr)
+library(stargazer)
+#library(plotly)
+library(htmltools)
+library(stringr)
+library(flextable)
+```
+
+
+
+```{r plot-dev, include=F, echo=FALSE, eval=TRUE}
+dtQ<-params$questionnaireDT
+out<-NULL
+for (line in 1:length(dtQ)) {
+v<-dtQ[[line]]
+env=new.env()
+out = c(out, knit_child('plot_child.Rmd', quiet=T))
+}
+
+```
+
+`r paste(out, collapse = '\n')`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,198 @@
+---
+title: "Paradata Vignette"
+author: "Michael Wild"
+date: "3/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.width = 8)
+
+####################
+## BU process paradata
+library(readr); library(bupaR); library(processmapR); library(data.table)
+library(SurveySolutionsAPI)
+## KEY!
+suso_set_key("https://mcw2.mysurvey.solutions", "apiTest", "Nitro2505#")
+##################################
+## Data preparation
+qid<-suso_getQuestDetails()$QuestionnaireId[2]
+ver<-suso_getQuestDetails()$Version[2]
+##  1. Paradata
+pd<-suso_export_paradata(questID = qid, 
+                         version = ver, onlyActiveEvents = T, allResponses = T)$AnswerSet
+setkeyv(pd, "var")
+##  2. Questionnaire (only Answer Set)
+quest<-suso_getQuestDetails(quid = qid, version = ver,
+                            operation.type = "structure")
+quest<-quest[!is.na(QuestionText)]
+quest[,var:=as.factor(quest[["VariableName"]])]
+setorderv(quest, cols = c("L0", "L1", "L2", "L3"))
+setnames(quest, c("L0", "L2", "L3"), c("Section", "RosterLevel1", "RosterLevel2"))
+setkeyv(quest, "var")
+## 3. Join structure and paradata
+pd<-pd[quest, nomatch=0]
+```
+
+## Status
+
+```{r status, echo=FALSE}
+##################################
+## Creating the eventlog
+##    1. For status
+pd_log<-pd %>% 
+  mutate(status = "complete",
+         activity_instance = 1:nrow(.)) %>%
+  eventlog(
+    case_id = "interview__id",
+    activity_id = "action",
+    activity_instance_id = "activity_instance",
+    lifecycle_id = "status",
+    timestamp = "dateTime",
+    resource_id = "responsible"
+  )
+
+```
+
+### Performance
+#### Mean (time in seconds)
+
+```{r perf_mean, echo=FALSE}
+pd_log %>%
+  process_map(performance(mean, "min"))
+```
+
+#### Median (time in seconds)
+
+```{r perf_median, echo=FALSE}
+pd_log %>%
+  process_map(performance(median, "min"))
+```
+
+#### Counts
+
+```{r count, echo=FALSE}
+pd_log %>%
+  process_map(type = frequency("absolute"))
+```
+
+
+## Question
+
+```{r question, echo=FALSE}
+##    2. For question
+pd_log<-pd %>% 
+  mutate(status = "complete",
+         activity_instance = 1:nrow(.)) %>%
+  eventlog(
+    case_id = "interview__id",
+    activity_id = "var",
+    activity_instance_id = "activity_instance",
+    lifecycle_id = "status",
+    timestamp = "dateTime",
+    resource_id = "responsible"
+  )
+```
+
+### Performance
+#### Mean (time in seconds)
+
+```{r quest_mean, echo=FALSE}
+pd_log %>%
+  process_map(performance(mean, "secs"))
+```
+
+#### Median (time in seconds)
+
+```{r quest_median, echo=FALSE}
+pd_log %>%
+  process_map(performance(median, "secs"))
+```
+
+#### Counts
+
+```{r quest_count, echo=FALSE}
+pd_log %>%
+  process_map(type = frequency("absolute"))
+```
+
+
+## Question Type
+
+```{r questionType, echo=FALSE}
+##    3. For question type
+pd_log<-pd %>% 
+  mutate(status = "complete",
+         activity_instance = 1:nrow(.)) %>%
+  eventlog(
+    case_id = "interview__id",
+    activity_id = "type",
+    activity_instance_id = "activity_instance",
+    lifecycle_id = "status",
+    timestamp = "dateTime",
+    resource_id = "responsible"
+  )
+```
+
+### Performance
+#### Mean (time in seconds)
+
+```{r qType_mean, echo=FALSE}
+pd_log %>%
+  process_map(performance(mean, "secs"))
+```
+
+#### Median (time in seconds)
+
+```{r qType_median, echo=FALSE}
+pd_log %>%
+  process_map(performance(median, "secs"))
+```
+
+#### Counts
+
+```{r qType_count, echo=FALSE}
+pd_log %>%
+  process_map(type = frequency("absolute"))
+```
+
+
+## Section
+
+```{r section, echo=FALSE}
+##    3. For question type
+pd_log<-pd %>% 
+  mutate(status = "complete",
+         activity_instance = 1:nrow(.)) %>%
+  eventlog(
+    case_id = "interview__id",
+    activity_id = "Section",
+    activity_instance_id = "activity_instance",
+    lifecycle_id = "status",
+    timestamp = "dateTime",
+    resource_id = "responsible"
+  )
+```
+
+### Performance
+#### Mean (time in seconds)
+
+```{r sect_mean, echo=FALSE}
+pd_log %>%
+  process_map(performance(mean, "secs"))
+```
+
+#### Median (time in seconds)
+
+```{r sect_median, echo=FALSE}
+pd_log %>%
+  process_map(performance(median, "secs"))
+```
+
+#### Counts
+
+```{r sect_count, echo=FALSE}
+pd_log %>%
+  process_map(type = frequency("absolute"))
+```

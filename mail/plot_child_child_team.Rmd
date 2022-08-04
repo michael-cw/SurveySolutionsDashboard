@@ -1,0 +1,30 @@
+```{r include=FALSE}
+#library(ggplot2)
+knitr::opts_chunk$set(echo = FALSE, comment = NULL, warning = F, message = F)
+QT<-str_replace_all(vvv$details$QuestionText, '%', '"')
+
+```
+
+<b><center>
+`r paste(vvv$details$VariableName)`
+</center>
+</b>
+<center> `r paste("QUESTION:",  QT)`</center>
+<hr>
+```{r, echo=F, comment=NULL}
+tab<-vvv$tab
+if(nrow(tab)>1){
+  if(sum(grepl(names(tab), pattern = "TEAMS"))>0){
+    tab<-tab[TEAMS%in%team]
+    tab[,c("TEAMS"):=NULL]
+    if (sum(grepl(names(tab), pattern = "TEAM MEMBER"))>0){
+      tab<-tab[`TEAM MEMBER`%in% line]
+      tab[,c("TEAM MEMBER"):=NULL]
+    }
+  }
+  if (nrow(tab)>0){
+    flextable(tab)
+  }
+}
+```
+<br><br><br>

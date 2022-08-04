@@ -1,0 +1,57 @@
+h2 { 
+    text-align: center;
+    display: block;
+    font-size: 1.5em;
+    margin-top: 0.67em;
+    margin-bottom: 0.67em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+    color: red;
+  }
+
+cite.sm {
+  font-size: 0.8em;
+  text-align: center;
+  font-weight: bold;
+}
+
+h1.title {
+  background-color: #0d47a1;
+  color: white;
+  text-align: center;
+}
+h4.author {
+  text-align: center;
+}
+h4.date {
+  text-align: center;
+}
+
+h1 {
+  text-align: center;
+}
+
+h2.qTitle {
+  font-size: 2em;
+  text-align: center;
+  color: #0d47a1;
+}
+
+h3.qTitle {
+  font-size: 1.5em;
+  text-align: center;
+  color: #0d47a1;
+}
+
+div.qInstr {
+  text-align: center;
+  display: block;
+  font-size: 1.5em;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;
+  color: #0d47a1;
+}

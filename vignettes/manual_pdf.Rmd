@@ -1,0 +1,224 @@
+---
+title: "Dashboard Manual Part 2"
+font_size: 12pt
+documentclass: article
+classoption: a4paper
+author: "Michael Wild"
+date: "3/12/2020"
+urlcolor: blue
+header-includes:
+     - \usepackage{tcolorbox}
+     - \usepackage{titling}
+     - \pretitle{\begin{center}
+        \includegraphics[width=2in,height=2in]{logo_suso.png}\LARGE\\}
+     - \posttitle{\end{center}}
+output: 
+  bookdown::pdf_document2:
+                toc: true
+                number_sections: true
+                keep_tex: true
+                includes:
+                  in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,
+                      fig.height = 3,
+                      fig.width = 1,
+                      dpi = 300, fig.retina=3, fig.align="center",
+                      knitr.graphics.auto_pdf = TRUE)
+library("DiagrammeR"); library(htmlwidgets); library(rsvg)
+```
+\newpage
+# Background
+
+This is the second part of the 2-part manuals accompanying the census dashboard. It is intended to be read by the census quality control team (i.e. supervisors/headquarters) as it will describe the full \textbf{monitoring} process.
+
+The first part of the manuals deals with the set-up of the application, and is only intended for the main census (IT) manager. None of these functions are intended to be used by the common user of this application.
+
+In the following we will describe the workflow, as it was understood by our team, as well as the different functions in the application, covering this workflow. Since the application uses the Survey Solutions API (Application Programming Interface, used to connect third party Software to Survey Solutions), and is fully integrated with Survey Solutions through this API, we will also stick to the Survey Solutions terminology. This means:
+
+- \textit{Headquarters} refers to Survey Solutions Headquarters
+- \textit{Supervisors} refers to Survey Solutions Supervisors
+- \textit{Interviews, Assignments etc.} as well.
+
+Besides starting the automation, the application is build to facilitate the quality control for large scale listing operations including the collection of geo-referenced location data for each census unit. The application is build around the Survey Solutions Computer Assisted Survey System (CASS) and its API. It is written in the open source programming language R and uses the R shiny package for building the graphical user interface (GUI). \newline
+
+It also uses the recently released \texttt{SurveySolutionsAPI} package (\url{https://github.com/michael-cw/SurveySolutionsAPI}) to communicate with the Survey Solutions CASS.
+
+
+\newpage
+# Operations
+
+The workflow as understood by the Survey Solutions Team formed the basis for this application. It is intended to be used by the \underline{central quality control team} which should consist of 5 to 10 persons. Since some of the processes conducted by the application require large scale data operations, there should never be more than 5 simultaneous users, as otherwise the processes may slow down significantly. In addition this application should also only be used by persons who received training and have studied this manual.
+
+Main features of the operation are:
+
+- continuous monitoring of the listing progress
+- continuous monitoring of the listing data
+- generation of reports for field teams
+- automated procedures for quality control
+- manual procedures of for quality control
+- generation of base maps (requires ESRI license to access the \url{https://tiledbasemaps.arcgis.com/arcgis/ World Imagery data})
+- \textbf{census} or \textbf{sample mode}.
+
+\begin{tcolorbox}[colback=red!5,colframe=red!40!black,title=Important]
+It is important to note, that the monitoring version of this application has 2 very important characteristics.
+\begin{enumerate}
+	\item This application is independent of the Survey Solutions server. Besides resetting an assignment (as described in Section 2.5, Control set 3), non of the actions undertaken in this application has any permanent effect on the data stored on the server.
+	\item The automation is independent of the application. This means non of the actions you undertake here, even crashing the application would anyhow affect the automation process. This process can only be stopped through the version used by the main census (IT) manager.
+\end{enumerate}
+\end{tcolorbox}
+\newpage
+The underlying work process has been understood as depicted in the following process diagram:
+
+```{r proc1, fig.height=1, fig.retina=2, fig.align="center", fig.cap="Workflow Listing"}
+knitr::include_graphics("proc1flow.jpg", dpi = 600)
+```
+
+The main assumption behind (Figure \@ref(fig:proc1)) for the provided version of this dashboard is that there is a \underline{single interviewer for each enumeration area}. After successfully completing the listing, the interviewer submits the interview containing the enlisted structures/dwellings to the server. If this happens without error, the interviewer will receive - \underline{through a second synchronization} - in return, a set of new assignments for each of the private, non-abandoned dwelling. These new assignments also include the exact geo-referenced location for the structure in which the dwelling for the main enumeration is located. With this location information, the interviewer can subsequently navigate to the structure (i.e. by using Google maps, maps.me or any other navigation application), and conduct the enumeration (main interview) for each of the dwellings.
+
+\newpage
+## Login
+To login to the application please use \textbf{ONLY} the following link: \url{https://apps4dev.mysurvey.solutions/SuSo_Bahamas2020/}. The credentials for the login have been provided through an email to the census management.
+
+```{r login, fig.cap="Application Login"}
+knitr::include_graphics("login.png", dpi = 400)
+```
+
+\newpage
+## Assignment Automation
+
+After logging in, you will see the first Section "Assignment Automation". In this section, there are no controls available for this version of the application. Users logged in, can however monitor the process through the center box.
+
+```{r tab1, fig.cap="Assignment Automation"}
+knitr::include_graphics("tab1.png", dpi = 400)
+```
+
+The left table and gauge in the center box shows the progress of the incoming (listing) data collection, the right table and gauge the progress for the outgoing (enumeration) questionnaire. This is it for this page, no other options are available to the monitoring user.
+
+
+\newpage
+## Coverage Maps
+
+The coverage maps display the overall progress of the incoming data by location. All submitted interviews will be displayed here according to the collected geo-locations. In addition, the map also displays the provided boundary files. Main features of this section are:
+
+- The map updates with any submission
+- The map displays processed and rejected interviews
+- The map displays the data by building type.
+
+```{r tab2, fig.cap="Coverage Maps"}
+knitr::include_graphics("tab2.png", dpi = 400)
+```
+
+\textcolor{red}{Control set 1} allows for the selection of the underlying base map (satellite/open street map), as well as the different types of incoming data. These are:
+
+- Processed Incoming
+- Rejected Incoming
+- Enumeration area boundaries.
+
+These can be selected/unselected as required. \newline
+
+\textcolor{red}{Control set 2} is the legend for all the different colors used in the map. The different colors reflect the building types. \newline
+
+
+
+\textcolor{red}{Control set 3} allows the user to quickly zoom to the corresponding data set. Clicking on it will center the map on the requested data.
+\newpage
+
+## Work Progress
+The Work Progress section allows you to 
+
+- monitor the responses to the different questions in the \underline{incoming questionnaire}, check if expected and real distribution of 
+- generate reports for teams, overall and for paradata (i.e. how many seconds per question), which can be used by quality control team 
+- review collection for individual enumeration areas.
+
+
+
+```{r tab3, fig.cap="Work Progress"}
+knitr::include_graphics("tab3.png", dpi = 800)
+```
+\textcolor{red}{Control set 1} allows you to select the variables which you want to monitor. Up to 6 variables can be observed simultaneously, and you can always modify the selection. After your selection in the upper box, confirm your selection by clicking the lower light-blue button. If valid responses had been submitted, you will see their distribution here. Only categorical question types are reported.\newline
+\textcolor{red}{Control set 2} is for the generation of reports. Currently the application generates an overall report for each of the incoming data items, a similar report by supervisor and a paradata report (select this option carefully since processing may take longer.)  \newline
+\textcolor{red}{Control set 3}  is the plot section. Up to 6 plots can be generated simultaneously. The values displayed refer to their percentage shares in the total number of \underline{valid responses}.\newline
+\textcolor{red}{Control set 4}  is the single shape viewer. Select an  ED from the drop down menu, to view only this area and its data if available. The map allows to view the Google satellite image through the selection panel in the upper left corner. In the upper right corner it is also possible to extend the map to the full screen. Different colors refer to different building types. The \textcolor{cyan}{light blue button} also allows you to review the timeline for this questionnaire in the selected area, as a process model (see for details: \url{https://www.bupar.net/}). Generation of this may take a bit of time. After clicking the button a pop-up window will appear as described in the next section. 
+
+### Survey Process Data (= Paradata)
+At the same time as the pop up up window appears a loading screen shows up in the upper right corner. Wait until this process is finished, and then the graph will be displayed.
+Currently the available paradata graphs are the complete timeline of the data collection process in seconds. This displays for example, the pace of the data collection process in this area in seconds and for each question.
+
+The other available paradata graph displays a summary of all the interviewer actions on the device during \underline{the whole data collection process}. It displays for example how many answers and how many times answers had been removed, or how many times the data collection process had been paused.
+
+\begin{figure}
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=1\textwidth]{modal_questions.png} % Timeline by question
+        \caption{Timeline by question}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=1\textwidth]{modal_actions.png} % Summary of actions
+        \caption{Summary of actions}
+    \end{minipage}
+\end{figure}
+\newpage
+
+## Assignments
+
+The Assignments section allows you to monitor the data flow at the level of the individual assignment, in particular it allows you to:
+
+- see the number of rejections by interview, and inspect rejected questionnaires in Survey Solutions
+- see the assignments created for each of the correctly submitted incoming interviews
+- reset the incoming interview to its unsubmitted states.
+
+
+```{r tab4, fig.cap="Assignments"}
+knitr::include_graphics("tab4.png", dpi = 800)
+```
+\textcolor{red}{Control set 1} provides information on all the interviews rejected in the current survey. Clicking on the link the corresponding column for a specific interview will open a new browser window, and open the underlying questionnaire \underline{one your Survey Solutions server}. For this purpose \underline{the user has to be logged in to the Survey Solutions server}, and also have the permission to view this data (i.e. headquarters, or supervisors for team members. This functionality could also be used to reassign the interview, i.e. if a certain interviewer produces to many rejections. \newline
+\textcolor{red}{Control set 2} shows all the created outgoing assignments as well as their status. It also contains a link to the corresponding assignment details (Id), or to the corresponding responsible interviewer (ResponsibleName). \newline
+\textcolor{red}{Control set 3} \textcolor{blue}{ATTENTION: ACTIONS IN THIS TABLE ARE IRREVERSIBLE. RESETTING AN INTERVIEW DELETES ALL CREATED ASSIGNMENTS INCLUDING THEIR DATA. USE ONLY AFTER CAREFUL PREPARATION!!.} In this table you an see all the processed incoming interviews. In the column Link, you can open the interview directly on the Survey Solutions server. In cases were it is necessary to send the listing questionnaire back to the interviewer, or to take the questionnaire out of the automation process, you can reset the interview to its state before synchronization. As a result the questionnaire is rejected to the user, including the data before submission, the interview id is taken out of the submission data base (=the interviewer can resubmit), and the created assignments are deleted (\textbf{Attention: Assignments are also deleted, if they contain data, so prepare carefully!}). After clicking the red button, an additional popup window will show up, which requires you to confirm the operation, by re-entering the displayed questionnaire Id.   \newline
+
+\begin{figure}
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=1\textwidth]{modal_reset.png} % Timeline by question
+        \caption{first figure}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        Figure 9 shows the confirmation dialogue. After confirming with OK, the process will be started, and can not be reversed.
+    \end{minipage}
+\end{figure}
+\newpage
+\newpage
+
+## Resources
+
+In this section you can:
+
+- change the boundaries visible in the Coverage Map
+- create the TPK (map package) as well as its corresponding boundary file for the Survey Solutions interviewer application.
+- download and delete the current log file for the automation process (a new one will be create as soon as the process is executed again).
+ 
+```{r tab5, fig.cap="Resources"}
+knitr::include_graphics("tab5.png", dpi = 800)
+```
+
+\textcolor{red}{Control set 1} allows you to upload the map file(s). It allows for the upload of a SINGLE boundary file or MULTIPLE boundaries. To successfully use the uploaded geo-spatial data, it needs to meet certain minimum requirements.
+
+\begin{tcolorbox}[colback=cyan!5,colframe=cyan!40!black,title=Requirements for area boundaries:]
+\begin{enumerate}
+	\item Contain the minimum components for a shape file including its projection.
+	\item Must include the required naming convention (i.e. have a unique Id) for each segment.
+	\item The file(s) must be packed in a zip-file at the FIRST folder level\footnote{This means the zip-file should not contain a folder containing all the files, but instead contain the files themselves. To achieve this, you need to select the files themselves (NOT their folder), when creating the zip-archive.}.
+\end{enumerate}
+\end{tcolorbox}
+
+After uploading the files, the old map files in the coverage map are replaced by the new files. You can replace files anytime. If you choose to produce the TPK files, click the corresponding red button. When the process is finished, the files will be visible in Control set 2.
+\newline
+\textcolor{red}{Control set 2} allows you to download the files. It is recommended, to use both files for the data collection process. Clearing the directory is also possible. This will delete all the files, it will however not delete the currently visible Coverage Map. The boundaries in this map are replaced with EACH upload.\newline
+\textcolor{red}{Control set 3} finally has only one available functionality, which is to download  the automation log-file. In the log file, you can find information about the automation process, and in particular about failure and success. \underline{Only use this after instructed to do so}. \newline
+
+

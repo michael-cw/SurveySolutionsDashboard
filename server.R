@@ -186,6 +186,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
   ##    -> if cronn is running
   observe({
     checkCron<-cron_ls()
+    shiny::validate(need(checkCron, message = F))
     if (str_length(checkCron)>1) {
       if (!is.null(cron_ls(id = cronID))){
         shinyjs::disable("autoSuso")

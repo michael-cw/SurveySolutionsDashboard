@@ -160,10 +160,11 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     }, contentType = "text/plain")
   
   ###########################################################################################
-  ##                                Shiny settings
+  ##                                Shiny Start-up
+  ##    i. Create Wecome message for user
+  ##    ii. Deactivate any running automatio -->Name is set in globals cronID
   ###########################################################################################
-  ############################
-  ##  Get User
+  ##  1. Get User
   user<-reactive({
     user<-session$user
     ## For DEV
@@ -171,7 +172,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     return(user)
   })
   ############################
-  ##  Create Welcome Message (only for DWL user)
+  ##  2. Create Welcome Message (only for DWL user)
   observe({
     ## get the user
     user<-user()
@@ -182,7 +183,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
                            type="success")
   })
   ############################
-  ## Deactivate Automation
+  ## 3. Deactivate Automation
   ##    -> if cronn is running
   observe({
     checkCron<-cron_ls()
@@ -203,66 +204,11 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
   })
   ###########################################################################################
   ##                            Survey Solutions Settings
+  ## --> Moved to module ("./helpers/suso_ServerSettingsModule.R")
   ###########################################################################################
-  ADMIN<-reactiveValues()
-  observe({
-    if(admin.check==0) {
-      updateTextInput(session = session,
-                      inputId = "susoServer",
-                      value = admin.vars[["susoServer"]],
-                      placeholder = "Provide Server")
-      
-      js$backgroundCol("susoServer", "#00ab51", "16px")
-      
-      ADMIN$settings<-admin.vars
-      
-    }
-  })
+  ADMIN<-suso_credentialsSRV("suso_connection")
   
-  #################################################################
-  ##  CHECK and SAVE Credentials
-  observeEvent(input$checkSuso, {
-    ## Requre Server Credentials
-    shiny::validate(need(input$susoServer, message = F),
-                    need(input$susoPass, message = F),
-                    need(input$susoUser, message = F))
-    admin.vars<-sapply(admVars, function(x) input[[x]])
-    # Generate Admin Vector
-    admVars<-c("susoServer", "susoUser", "susoPass")
-    
-    #####################################
-    ##  PW check (GET und response)
-    if (suso_PwCheck(admin.vars[["susoServer"]],
-                     admin.vars[["susoUser"]],
-                     admin.vars[["susoPass"]])$status_code!=200) {
-      updateTextInput(session = session,
-                      inputId = "susoServer",
-                      label = "Survey Solutions Server",
-                      placeholder = "Provide Server")
-      js$backgroundCol("susoServer", "red", "16px")
-      admin.vars<-rep("TBD", length(admin.vars))
-    } else {
-      updateTextInput(session = session,
-                      inputId = "susoServer",
-                      value = input$susoServer,
-                      placeholder = "Provide Server")
-      js$backgroundCol("susoServer", "#00ab51", "16px")
-      tryCatch({saveRDS(admin.vars, admfp)},
-               error = function(e) {print("New File")})
-      
-    }
-    ADMIN$settings<-admin.vars
-  })
   
-  ## also set key for Suso package
-  observe({
-    settings<-ADMIN$settings
-    req(settings)
-    if(sum(settings=="TBD")==0) {
-      suso_clear_keys()
-      suso_set_key(settings[["susoServer"]], settings[["susoUser"]], settings[["susoPass"]])
-    }
-  })
   #################################################################
   ##      Get Questionnaire
   questIdIn<-reactiveVal(NULL); questFullListIn<-reactiveVal(NULL); 
@@ -306,9 +252,12 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     tab<-tab[,.(Title, Version, QuestionnaireId, LastEntryDate)]
     ## Export
     questFullListIn(tab)
-    DT::datatable(tab[,.(Title, Version)], smTab, selection = "single",  rownames = F,
+    CHECKtab<<-tab
+    tab<-DT::datatable(tab[,.(Title, Version)], smTab, selection = "single",  rownames = F,
                   style = "bootstrap")
+    return(tab)
   })
+  
   ##  2. Select one
   observeEvent(input$qTableIn_rows_selected,{
     sel<-input$qTableIn_rows_selected
@@ -320,14 +269,15 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     questV_selIn(id[sel, Version])
     questN_selIn(id[sel, Title])
     qDataOut(qData()[QuestionnaireId !=id[sel, QuestionnaireId]])
-  })
+  }, ignoreInit = T)
+  
   ##  3. Get all Interviews for the Questionnaire
   IntQuestionnairIn<-reactive({
     req(questIDselIn())
     tab<-tryCatch(
       {suso_getAllInterviewQuestionnaire(questID = questIDselIn(),
                                          version = questV_selIn())},
-      error = function(e) {print(e); return(data.table(count=numeric(0)))}
+      error = function(e) {print(paste("BIG ERROR", e)); return(data.table(count=numeric(0)))}
     )
     return(tab)
   })
@@ -445,8 +395,8 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     if(file.exists(questfpI())) {
       qInquest<-read_fst(questfpI(), as.data.table = T)
     } else {
-      qInquest<-suso_getQuestDetails(operation.type = "structure", quid = questIDselIn(), version = questV_selIn())
-      qInquest<-qInquest[QuestionText!="NA"]
+      qInquest<<-suso_getQuestDetails(operation.type = "structure", quid = questIDselIn(), version = questV_selIn())$q
+      qInquest<-qInquest[QuestionText!="NA"][,..JSON:=NULL]
       write_fst(qInquest,questfpI())
     }
     questInAllQuestions(qInquest)
@@ -454,8 +404,8 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     if(file.exists(questfpO())) {
       qOquest<-read_fst(questfpO(), as.data.table = T)
     } else {
-      qOquest<-suso_getQuestDetails(operation.type = "structure", quid = questIDselOut(), version = questV_selOut())
-      qOquest<-qOquest[QuestionText!="NA"]
+      qOquest<-suso_getQuestDetails(operation.type = "structure", quid = questIDselOut(), version = questV_selOut())$q
+      qOquest<-qOquest[QuestionText!="NA"][,..JSON:=NULL]
       write_fst(qOquest,questfpO())
     }
     questOutAllQuestions(qOquest)
@@ -1501,8 +1451,8 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
   ## 2. OUT
   questAssOut<-reactive({
     if(!is.null(questIDselOut())) {
-      qo<-questIDselOut()
-      v<-questV_selOut()
+      qo<<-questIDselOut()
+      v<<-questV_selOut()
     } else if (file.exists(file.path("helpers", "cron_files", "tmp", "questIDselOut.rds"))) {
       qo<-read_rds(file.path("helpers", "cron_files", "tmp", "questIDselOut.rds"))
       v<-read_rds(file.path("helpers", "cron_files", "tmp", "questV_selOut.rds"))

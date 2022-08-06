@@ -1,28 +1,34 @@
-## cron ID!!!!! -->change when running multiple apps same server
+##################################################
+## Globals for SURVEY SOLUTIONS DASHBOARD V.O.0.1 
+##################################################
+
+## ONLY for dev
+source("./CREDENTIALS.R")
+## options(error = browser) 
+options(error = NULL)
+
+#################################################
+## source helpers
+## 1. Modules
+source("./helpers/suso_ServerSettingsModule.R")
+## 2. TPK & map functions
+source("helpers/loadTPK_SF.R")
+source("helpers/checkTPKsizeSF.R")
+source("helpers/mapTiles.R")
+######################################################################
+## SET CRON ID -->change ONLY when running multiple apps same server
 cronID<-'autoAssign1'
 APPDIR<-"SurveySolutionsDashboard" #ALSO change in cron file!
-####################################
-## Globals for BAHAMAS2020 App v3.0.#
+
 ####################################
 ## Enable Bookmarking
 enableBookmarking(store = "server")
 
 
-
+####################################
 ###Set maximum file upload size, default 5m
 options(shiny.maxRequestSize=30*1024^2)
 
-## future
-library(future); library(foreach); library(doFuture)
-###############################
-#options(future.globals.maxSize=5000*1024^2)
-
-### 0.2 MAPS Now SF
-## bing map
-## api key
-source("./CREDENTIALS.R")
-
-library(sf)
 ## file path to shapes
 fpEnumDistr<-file.path("data", "database", "EnumDistrict")
 ### 0.3 STYLES 
@@ -83,38 +89,49 @@ htmlBoxedHeader<-c("text-align: center;background-color: #009FDA;
                    color: #FFFFFF; margin:0% 2% 0% 2%;")
 ########################################################################################################
 ####                      CHECK VARIABLES
+####        - Variables which need to be monitored must be provided here
 ########################################################################################################
 checkVars<-"HL1a_PrivDwel_Inst"
 
 ########################################################################################################
 ####                      TPK FILES
+####        - File path to store the downloaded basemaps
 ########################################################################################################
 
 fpTPK<-file.path("/srv","shiny-server", APPDIR,"data", "database", "EnumDistrTPK")
 errorTPK<-file.path("/srv","shiny-server", APPDIR,"data", "database", "tpkError_copy.txt")
 
 ########################################################################################################
-####                      other FILES
+####                      Questionnaire FILES
+####    - stores information when application is restarted
 ########################################################################################################
 ## questionnaire
 questfp<-file.path("data", "database", 
                    "Questionnaire")
 
+## database
+fpDB<-file.path("data", "database")
+fpDBmain<-file.path(fpDB, "completedAndAssigned.fst")
+########################################################################################################
+####                      CRON FILES
+####    - file pathes for CRON
+########################################################################################################
 ## cron
 fpCRON<-file.path("helpers", "cron_files", "tmp")
 fpCRONerrorfile<-file.path("helpers", "cron_files", "cron_incoming.log")
 fpCRONcounter<-file.path("helpers", "cron_files", "tmp", "nrowOld.rds")
-## database
-fpDB<-file.path("data", "database")
-fpDBmain<-file.path(fpDB, "completedAndAssigned.fst")
-## bookmarks
+
+##############################
+## Bookmark Path
 fpBOOK<-file.path("user_bookmarks")
+##############################
 ## admin settings
 admfp<-file.path("data", "admin","admin_settings.rds")
 
 
 ####################################
-## PARA TEST
+## PARADATA WITH PROCESS ANALYSIS
+####################################
 ##  1. Paradata
 # pdlist<-suso_export_paradata(questID = qid, 
 #                              version = ver, onlyActiveEvents = T, allResponses = T,reloadTimeDiff = 800)
@@ -184,3 +201,30 @@ shinyInput <- function(FUN, len, id, ...) {
   }
   inputs
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -10,17 +10,13 @@
 ##              --> devtools::install_github("michael-cw/SurveySolutionsAPI", build_vignettes = T)      #
 #########################################################################################################
 ## 0.  LIBRARIES
-samplingApp1<-c("stringi", "htmltools","shinyjs", "data.table", "readr","plotly",
+samplingApp1<-c("stringi", "htmltools","shinyjs", "data.table", "readr","plotly", "sf", "future", "foreach", "doFuture",
                 "stringr", "shinycssloaders", "shinydashboard", "shinyalert", "mapview", "fst", "leaflet",
                 "future", "foreach", "doFuture", "lubridate", "SurveySolutionsAPI", "flextable", "googleway")
 suppressPackageStartupMessages(lapply(samplingApp1, require, character.only = TRUE))
 ## 1. globals & server settings
-source("helpers/susoServerSettings.R")
 source("helpers/globals.R")
-## 2. TPK & map functions
-source("helpers/loadTPK_SF.R")
-source("helpers/checkTPKsizeSF.R")
-source("helpers/mapTiles.R")
+
 
 ######################################################################################################################
 function(request) {
@@ -51,8 +47,10 @@ function(request) {
                    tabPanel("Assignment Automation",
                             useShinyjs(),
                             useShinyalert(),
-                            extendShinyjs(script = "www/backgroundCol.js",
-                                          functions = c("backgroundCol", "backgroundColBox")),
+                            # extendShinyjs(text = "bgcol",
+                            #               functions = "backgroundCol"),
+                            # extendShinyjs(text = "bgcolbox",
+                            #               functions = "backgroundColBox"),
                             shinydashboard::box(width = 4, status = "success",height = "610px",
                                                 solidHeader = T, background = "green",
                                                 ############################################################
@@ -60,19 +58,8 @@ function(request) {
                                                 title = "Server Settings",
                                                 ### server,user,pass
                                                 br(),
-                                                fluidRow(
-                                                    column(6,
-                                                           textInput("susoServer", "Survey Solutions Server",
-                                                                     placeholder = "Provide Server")
-                                                    ),
-                                                    column(3,
-                                                           textInput("susoUser", "API user",
-                                                                     placeholder = "Provide User" )
-                                                    ),
-                                                    column(3,
-                                                           passwordInput("susoPass", "API password",
-                                                                         placeholder = "Provide Pass"))
-                                                ),br(),br(),
+                                                suso_credentials_inputUI("suso_connection"),
+                                                br(),br(),
                                                 fluidRow(
                                                     column(3),
                                                     column(6,
@@ -107,13 +94,7 @@ function(request) {
                                                 ),br(),
                                                 fluidRow(
                                                     column(4,
-                                                           actionButton("checkSuso", "Check",
-                                                                        icon("check"),
-                                                                        width = "80%",
-                                                                        style="color: #fff;
-                                                              background-color: #337ab7;
-                                                              border-color: #337ab7;
-                                                                margin: 0 0% 0 0%;")
+                                                           suso_credentials_checkUI("suso_connection")
                                                     ),
                                                     column(4,
                                                            actionButton("loadSuso", "Load",

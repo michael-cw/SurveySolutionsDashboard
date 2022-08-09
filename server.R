@@ -252,7 +252,6 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     tab<-tab[,.(Title, Version, QuestionnaireId, LastEntryDate)]
     ## Export
     questFullListIn(tab)
-    CHECKtab<<-tab
     tab<-DT::datatable(tab[,.(Title, Version)], smTab, selection = "single",  rownames = F,
                   style = "bootstrap")
     return(tab)
@@ -951,8 +950,21 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
       })
     }
     print(length(tab))
+    CHECKtab<<-tab
+    ###########################################
+    ## Generate Data for Pie Chart
+    ###########################################
     for(i in 1:length(tab)) {
       data<-tab[[i]]$data[1]
+      nam<-paste0("pie",i)
+      #################################
+      ## if no data, generate 0 data.table
+      if(nrow(data)==0) {
+        PIES[[nam]]$data<-data.table(empty=numeric(0))
+        PIES[[nam]]$details<-tab[[i]]$details
+        PIES[[nam]]$total<-0
+        next()
+        }
       total<-data[1,Total]
       data[,c("TEAM MEMBER"):=NULL][,TEAMS:=NULL][,Total:=NULL]
       cat<-names(data)
@@ -961,7 +973,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
       setnames(data,1,"Share")
       data$Share
       data$Share<-round(100*(data$Share/sum(data$Share, na.rm = T)), 2)
-      nam<-paste0("pie",i)
+      
       PIES[[nam]]$data<-data
       PIES[[nam]]$details<-tab[[i]]$details
       PIES[[nam]]$total<-total

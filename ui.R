@@ -472,9 +472,9 @@ function(request) {
                                                   style = "text-align: center;font-weight: bold;"),
                                          helpText("You can provide multiple files or a single file. The application
                                                          will generate a field LABEL, which will be visible on the tablet.
-                                                         If it is a SINGLE file, the app requires you to select exactly 
+                                                         If it is a SINGLE file, the app requires you to select up to 
                                                          2 (TWO) variables, which will be used for the labels. If it is MULTIPLE files
-                                                         the app will use the FILE names.
+                                                         the app will use the FILE names to create this label.
                                                          Download these files (shape and tpk) and transfere them to the folders on
                                                          the tablet",
                                                   style = "text-align: center;")
@@ -603,7 +603,8 @@ function(request) {
                                                       )
                                      )
                  )
-        )
+        ),
+        tabPanel("Survey Settings")
         
     )
     )

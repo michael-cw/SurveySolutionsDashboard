@@ -47,10 +47,11 @@ styleMain_noLeg<-theme(legend.justification=c(0,0), legend.position="none",
                        legend.key.size = unit(0.5, "cm"))
 ## 0.4. Specifc table styles
 ## overview
-inOutTable<-. %>% formatStyle('Status', 
-                              color = '#fff', 
-                              backgroundColor = '#337ab7', 
-                              fontWeight = 'bold', fontSize='100%') %>% 
+inOutTable<-. %>% 
+  formatStyle('Status', 
+              color = '#fff', 
+              backgroundColor = '#337ab7', 
+              fontWeight = 'bold', fontSize='100%') %>% 
   formatStyle('Count', 
               fontSize='100%', textAlign = 'center') %>% 
   formatStyle('Errors', 

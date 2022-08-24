@@ -8,7 +8,7 @@ APPDIR<-"SurveySolutionsDashboard"
 ###############################
 ## i. packages
 packages<-c("httr", "shiny", "SurveySolutionsAPI", "readr", "future", "foreach", "doFuture", "data.table", "stringr")
-suppressPackageStartupMessages(lapply(packages, require, character.only = TRUE))
+pack<-suppressPackageStartupMessages(lapply(packages, require, character.only = TRUE))
 ## ii. working directory -->set to shiny app to avoid absolute
 wd<-read_rds(file.path("","srv", "shiny-server", APPDIR,"helpers", 
                        "cron_files", "tmp", "wd.rds"))

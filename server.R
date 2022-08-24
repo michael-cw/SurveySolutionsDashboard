@@ -309,7 +309,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     shiny::validate(need(sel, message = F))
     tab<-IntQuestionnairIn()
     if(nrow(tab)==0) {
-      tab<-data.table(Status="No data", Count="", Errors="")
+      tab<-data.table(Status="", Count="No data", Errors="")
     } else {
       tab<-tab[, .(Count=.N, Errors=sum(ErrorsCount, na.rm = T)), by=.(Status)]
       tab[,Status:=str_replace_all(Status, "By", " ")]
@@ -470,7 +470,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     ## Get counts and error sums bei status
     tab<-IntQuestionnairOut()
     if(nrow(tab)==0) {
-      tab<-data.table(Status="No data", Count="", Errors="")
+      tab<-data.table(Status="", Count="No data", Errors="")
     } else {
       tab<-tab[, .(Count=.N, Errors=sum(ErrorsCount, na.rm = T)), by=.(Status)]
       tab[,Status:=str_replace_all(Status, "By", " ")]
@@ -585,9 +585,9 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     shinyjs::showElement("stopSuso")
     ## check if cron job exist, and stop if it does!
     checkCron<-cron_ls()
-    if (str_length(checkCron)>1) {
+    if (length(checkCron)>0 && str_length(checkCron)>1) {
       if (!is.null(cron_ls(id = cronID)))
-        cron_rm(id = cronID, dry_run = F, user = "")
+        cron_rm(id = cronID, dry_run = F, user = "", ask = F)
     }
     showNotification("Auto Assignment Activated. Click Stop Auto Assignment to Cancel", 
                      duration = NULL, id = "autoAssignActive",
@@ -627,13 +627,13 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
                frequency = '*/1 * * * *', 
                id = cronID,
                tags = c("assing", "reject"),
-               dry_run = F)
+               dry_run = F, ask = F)
     } else if (is.null(cron_ls(id = cronID))){
       cron_add(command = cmd, 
                frequency = '*/1 * * * *', 
                id = cronID,
                tags = c("assing", "reject"),
-               dry_run = F)
+               dry_run = F, ask = F)
     } else {
       showNotification("Auto Assignment Already Activated. Login with full id!", 
                        duration = NULL, id = "autoAssignActive",
@@ -644,7 +644,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
   observeEvent(input$stopSuso, {
     ## Shinyjs reset did not stop reactivePoll
     buttonACT(FALSE)
-    if (str_length(cron_ls())>0) cron_rm(id = cronID, dry_run = F, user = "")
+    if (str_length(cron_ls())>0) cron_rm(id = cronID, dry_run = F, user = "", ask = F)
     removeNotification(id = "autoAssignActive")
   }, ignoreInit = T)
   
@@ -950,7 +950,6 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
       })
     }
     print(length(tab))
-    CHECKtab<<-tab
     ###########################################
     ## Generate Data for Pie Chart
     ###########################################
@@ -1134,13 +1133,17 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
   singleShapeSelected<-reactiveVal(NULL)
   ##
   observeEvent(input$singleShapeSelect,{
-    bound<-enumDistrict()
+    bound<<-enumDistrict()
     req(input$singleShapeSelect)
-    print(input$singleShapeSelect)
     shiny::validate(need(bound, message = "No boundaries provided"))
-    singleBound = bound %>% filter(label == input$singleShapeSelect)
+    singleBound = bound %>% dplyr::filter(label == input$singleShapeSelect)
     singleShapeSelected(singleBound)
     
+    ## i. Map with no points
+    google_map_update(map_id = "singleShapeMap") %>%
+      googleway::clear_polygons(layer_id = "bounds") %>% googleway::clear_markers(layer_id = "buildings") %>%
+      googleway::add_polygons(data=singleBound, layer_id = "bounds", focus_layer = T, 
+                              fill_opacity = 0.5)
     
     if(!is.null(buildingPoints())) {
       shpPoints<-buildingPoints()
@@ -1164,9 +1167,11 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
                                  layer_id = "buildings", 
                                  focus_layer = F,
                                  colour = "color", info_window = "info")
-      } else {
+      } else if(is.null(buildingPoints())) {
         ## set building points subset back to NULL
+        print(input$singleShapeSelect)
         buildingPointsSubset(NULL)
+        
         google_map_update(map_id = "singleShapeMap") %>%
           googleway::clear_polygons(layer_id = "bounds") %>% googleway::clear_markers(layer_id = "buildings") %>%
           googleway::add_polygons(data=singleBound, layer_id = "bounds", focus_layer = T, 
@@ -1442,7 +1447,10 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
       qo<-NULL
       req(qo)
     }
-    tab<-suso_get_assignments(questID = qo, version = v)
+    tryCatch(
+      tab<-suso_get_assignments(questID = qo, version = v),
+      error = function(e) {req(FALSE)}
+    )
     tab<-tab[QuestionnaireId==paste0(str_remove_all(qo, "-"), "$", v)]
     shinyjs::show("progIn")
     shinyjs::show("incoming")
@@ -1452,8 +1460,13 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
   output$completeGaugeIn<-flexdashboard::renderGauge({
     tab<-questAssIn()
     req(tab)
-    sum(tab$InterviewsCount)/nrow(tab)
-    flexdashboard::gauge(round(100*(sum(tab$InterviewsCount)/nrow(tab)), 2), min = 0, max = 100, symbol = '%', 
+    ## check for content
+    if(nrow(tab)==0 || sum(tab$InterviewsCount)==0) {
+      prog<-0
+    } else {
+      prog<-round(100*(sum(tab$InterviewsCount)/nrow(tab)), 2)
+    }
+    flexdashboard::gauge(prog, min = 0, max = 100, symbol = '%', 
                          flexdashboard::gaugeSectors(success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
                          )
     )
@@ -1473,7 +1486,10 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
       qo<-NULL
       req(qo)
     }
-    tab<-suso_get_assignments(questID = qo, version = v)
+    tryCatch(
+    tab<-suso_get_assignments(questID = qo, version = v),
+    error = function(e) {req(FALSE)}
+    )
     tab<-tab[QuestionnaireId==paste0(str_remove_all(qo, "-"), "$", v)]
     shinyjs::show("progOut")
     shinyjs::show("outgoing")
@@ -1484,8 +1500,13 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
   output$completeGaugeOut<-flexdashboard::renderGauge({
     tab<-questAssOut()
     req(tab)
-    sum(tab$InterviewsCount)/nrow(tab)
-    flexdashboard::gauge(round(100*(sum(tab$InterviewsCount)/nrow(tab)), 2), min = 0, max = 100, symbol = '%', 
+    # check for content
+    if(nrow(tab)==0 || sum(tab$InterviewsCount)==0) {
+      prog<-0
+    } else {
+      prog<-round(100*(sum(tab$InterviewsCount)/nrow(tab)), 2)
+    }
+    flexdashboard::gauge(prog, min = 0, max = 100, symbol = '%', 
                          flexdashboard::gaugeSectors(success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
                          )
     )
@@ -1624,17 +1645,20 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
   ##############################################################################
   ##                      RESSOURCES
   ##############################################################################
+  ## 1. Hide label input until shape is loaded
   observe({
     shinyjs::hide("labelVars")
   })
+  ## 2. Shape upload
   observeEvent(input$mapUpload, {
     shiny::validate(need(input$mapUpload, message = "Select file first!"))
-    ## hide variable selection on new upload
+    ## 2.1. Hide variable selection on new upload
     shinyjs::hide("labelVars")
     
+    ## temporary directory for upload
     shpFiles<-tempdir()
     unlink(paste0(shpFiles, "/*"))
-    ## DELETE old
+    ## clear local storage
     unlink(paste0(fpEnumDistr, "/*"))
     
     unzip(input$mapUpload$datapath, exdir = shpFiles)
@@ -1650,7 +1674,12 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
       return(NULL)
     }
     
-    ## update variable names for label with single file
+    ######################################################################
+    ## SHAPE FILE triggers two options
+    ##    Option 1: Upload single file, select ID var, and created individual shapes
+    ##    Option 2: Upload multiple files, ID will be created from variable names
+    ######################################################################
+    ## 1. Update variable names for label with single file (Opt 1)
     if (length(shpFile)==1){
       ## Single File--.user selects variable for label
       shinyjs::show("labelVars")
@@ -1660,7 +1689,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
                                                          type = "error"); return(NULL)}
       )
       req(shp)
-      choices<-names(shp)
+      choices<-names(shp %>% st_set_geometry(NULL))
       ###############################
       ## SINGLE SHAPE PROCEDURE
       ## A. Variables for label name
@@ -1679,15 +1708,25 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
   ## B. MODAL TO CONFIRM
   observeEvent(input$labelVars, {
     showModal(modalDialog(
-      title = paste("You have selected:", input$labelVars[1], input$labelVars[2]),
-      "Label variable(s) should contain NO missing values. Confirm your selection to continue",
+      title = paste("You have selected:", input$labelVars[1], ifelse(is.na(input$labelVars[2]), "", input$labelVars[2])),
+      "Label variable(s) should contain NO missing values, and must uniquely identify the the polygon. 
+      Confirm your selection to continue",
       easyClose = TRUE,
       footer = tagList(
-        modalButton("Cancel"),
-        actionButton("confirmLabel", "Generate Label")
+        fluidRow(
+        column(4, modalButton("Cancel")),
+        column(4, actionButton("secondLabel", "Select Another", style=styleDwlButton)),
+        column(4, actionButton("confirmLabel", "Generate Label", style=styleActButton))
+        )
       )
     ))
   })
+  
+  ## B.1. Close modal when secondLabel is selected
+  observeEvent(input$secondLabel, {
+    removeModal()
+  })
+  
   ## C. Process single file in observe event
   observeEvent(input$confirmLabel, {
     removeModal()
@@ -1701,7 +1740,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
       if (length(labelVars)==1) {
         shplist$label<-sprintf("%s", shplist[,labelVars[1], drop = T])
       } else {
-        shplist$label<-sprintf("%s_%s", shplist[,labelVars[1], drop = T],shplist[,labelVars[2], drop = T])
+        shplist$label<-sprintf("%s_%s", shplist[,labelVars[1], drop = T], shplist[,labelVars[2], drop = T])
       }
       ## write file to directory for Coverage Maps
       shpFileUploadToTPK(shplist)
@@ -1778,7 +1817,7 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     }
   })
   fileListTiles<-reactiveValues()
-  ## 1.1. API CALL TO MAP SERVER
+  ## 1.1. API CALL TO MAP SERVER FOR TPK
   observeEvent(input$create_raster, {
     samp_raster_shp<-shpFileUploadToTPK()
     req(samp_raster_shp)
@@ -1862,6 +1901,65 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     fileListTiles$tmpFile<-tmpFile
   }, ignoreInit = T)
   
+  ## 1.2. WRITE SHAPE FILES TO DIRECTORY AFTER UPLOAD
+  observe({
+    samp_raster_shp<-shpFileUploadToTPK()
+    shiny::validate(need(samp_raster_shp, message = F))
+    ################################################################
+    ##  1. Check the size, and decrease if required
+    showNotification("ATTENTION: Writing shape files to boundary directory", 
+                     duration = NULL, id = "shapewrite",
+                     type = "warning")
+    plan(multicore)
+    tmpFile<-future({
+      if(class(samp_raster_shp)[1]!="sf") {
+        for(shape in names(samp_raster_shp)){
+          tmp.shp<-samp_raster_shp[[shape]]
+          shape<-str_remove_all(shape, ".shp$")
+          tmp.shp<- tmp.shp %>% st_transform(4326)
+          
+          for (i in seq_along(st_geometry(tmp.shp))) {
+            #################
+            ## area name
+            areaName<-shape
+            ## write processed shape to TPK dir for download
+            tryCatch(
+              st_write(tmp.shp, file.path(fpTPK, paste0(areaName, "_id_", i, ".shp"))),
+              error = function(e) {showNotification("ATTENTION: File already exists, clear directory first!", 
+                                                    duration = NULL, id = "wrongShp3",
+                                                    type = "error")}
+            )
+          }
+        } 
+      } else {
+        samp_raster_shp<- samp_raster_shp %>% st_transform(4326)
+        #samp_raster_shp<-splitShapTile(samp_raster_shp, zoomMax = 19)
+        ################################################################
+        ##  2. Load Files
+        ML<-paste0("1-", 19)
+        tmpFile<-character(length = length(st_geometry(samp_raster_shp)))
+        
+        for (i in seq_along(st_geometry(samp_raster_shp))) {
+          #################
+          ## area name
+          areaName<-samp_raster_shp[i, "label"] %>% dplyr::select(label) %>% 
+            st_set_geometry(NULL)
+          areaName<-areaName[1,"label"]
+          tryCatch(
+            st_write(samp_raster_shp[i,], file.path(fpTPK, paste0(areaName, "_id_", i, ".shp"))),
+            error = function(e) {showNotification("ATTENTION: File already exists, clear directory first!", 
+                                                  duration = NULL, id = "wrongShp4",
+                                                  type = "error")}
+          )
+        }
+        return(tmpFile)
+      }
+    }, packages = c("sf", "raster"))
+    
+    removeNotification("shapewrite")
+    fileListTiles$tmpFile<-tmpFile
+  })
+  
   #####################
   ##  2. Display directories
   ## 2.1 TPK
@@ -1869,18 +1967,18 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
                        # This function returns the time that log_file was last modified
                        checkFunc = function() {
                          if (dir.exists(fpTPK))
-                           length(list.files(fpTPK, pattern = ".tpk$"))
+                           length(list.files(fpTPK, pattern = ".tpk$", full.names = T))
                          else
                            ""
                        },
                        # This function returns the content of log_file
                        valueFunc = function() {
-                         list.files(fpTPK, pattern = ".tpk$")
+                         list.files(fpTPK, pattern = ".tpk$", full.names = T)
                        }
   )
   output$tpkDirTable<-DT::renderDataTable({
     shiny::validate(need(!is.null(flTPK()), message = "No Maps Available!"))
-    tab<-data.table(Files=flTPK())
+    tab<-data.table(Files=basename(flTPK()))
     DT::datatable(tab, smTabDir ,selection = "none",  rownames = F,
                   style = "bootstrap")
     
@@ -1890,18 +1988,20 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
                        # This function returns the time that log_file was last modified
                        checkFunc = function() {
                          if (dir.exists(fpTPK))
-                           length(list.files(fpTPK, pattern = ".shp$"))
+                           length(list.files(fpTPK, pattern = "(.shp$)|(.dbf$)|(.prj$)|(.shx$)", full.names = T))
                          else
                            ""
                        },
                        # This function returns the content of log_file
                        valueFunc = function() {
-                         list.files(fpTPK, pattern = ".shp$")
+                         list.files(fpTPK, pattern = "(.shp$)|(.dbf$)|(.prj$)|(.shx$)", full.names = T)
                        }
   )
   output$shpDirTable<-DT::renderDataTable({
     shiny::validate(need(!is.null(flSHP()), message = "No Maps Available!"))
-    tab<-data.table(Files=flSHP())
+    tab<-basename(flSHP())
+    tab<-tab[grepl(".shp$", tab)]
+    tab<-data.table(Files=tab)
     print(nrow(tab))
     
     DT::datatable(tab, smTabDir ,selection = "none",  rownames = F,
@@ -1921,15 +2021,9 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     
     tmpFile<-flTPK()
     shiny::validate(need(tmpFile, message = F))
-    
-    tmpDir<-fpTPK
-    wdOld<-getwd()
-    setwd(tmpDir)
-    on.exit(setwd(wdOld))
-    
-    zip(zipfile=file, files=tmpFile)
+    zip::zip(zipfile=file, files=tmpFile, mode = "cherry-pick")
     #################################
-    ## on exit enable button
+    ## on exit enable button again
     shinyjs::enable(id = "dwl_raster")
   }, contentType = "application/zip")
   ##  2.3. SHAPE
@@ -1940,16 +2034,9 @@ WORKDIR<-getwd()  #store working directory in case any of the long running proce
     #################################
     ## on entry disable button
     shinyjs::disable(id = "dwl_shape")
-    
-    tmpFileSHP<-flTPK()
+    tmpFileSHP<-flSHP()
     shiny::validate(need(tmpFileSHP, message = F))
-    tmpFile<-list.files(fpTPK, pattern = "(.shp$)|(.dbf$)|(.prj$)|(.shx$)")
-    tmpDir<-fpTPK
-    wdOld<-getwd()
-    setwd(tmpDir)
-    on.exit(setwd(wdOld))
-    
-    zip(zipfile=file, files=tmpFile)
+    zip::zip(zipfile=file, files=tmpFileSHP, mode = "cherry-pick")
     #################################
     ## on exit enabele button
     shinyjs::enable(id = "dwl_shape")
